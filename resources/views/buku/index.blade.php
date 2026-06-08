@@ -64,6 +64,71 @@
     </div>
 </div>
  
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="{{ route('buku.search') }}" method="GET" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Keyword</label>
+                <input
+                    type="text"
+                    name="keyword"
+                    class="form-control"
+                    placeholder="Cari judul, pengarang, penerbit"
+                    value="{{ old('keyword', $keyword ?? '') }}"
+                >
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Kategori</label>
+                <select name="kategori" class="form-select">
+                    <option value="">Semua Kategori</option>
+                    @foreach ($kategoriList as $filterKategori)
+                        <option
+                            value="{{ $filterKategori }}"
+                            {{ old('kategori', $kategori ?? '') == $filterKategori ? 'selected' : '' }}
+                        >
+                            {{ $filterKategori }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tahun</label>
+                <select name="tahun" class="form-select">
+                    <option value="">Semua Tahun</option>
+                    @foreach ($tahunList as $filterTahun)
+                        <option
+                            value="{{ $filterTahun }}"
+                            {{ old('tahun', $tahun ?? '') == $filterTahun ? 'selected' : '' }}
+                        >
+                            {{ $filterTahun }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Ketersediaan</label>
+                <select name="ketersediaan" class="form-select">
+                    <option value="">Semua</option>
+                    <option value="tersedia" {{ old('ketersediaan', $ketersediaan ?? '') == 'tersedia' ? 'selected' : '' }}>
+                        Tersedia
+                    </option>
+                    <option value="habis" {{ old('ketersediaan', $ketersediaan ?? '') == 'habis' ? 'selected' : '' }}>
+                        Habis
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Cari
+                </button>
+                <a href="{{ route('buku.index') }}" class="btn btn-outline-secondary mt-2">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+ 
 {{-- Filter Kategori --}}
 <div class="card mb-4">
     <div class="card-body">

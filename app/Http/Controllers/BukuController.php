@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
  
 use Illuminate\Http\Request;
 use App\Models\Buku;
+use App\Models\Kategori;
  
 class BukuController extends Controller
 {
@@ -20,18 +21,71 @@ class BukuController extends Controller
         $bukuTersedia = Buku::where('stok', '>', 0)->count();
         $bukuHabis = Buku::where('stok', 0)->count();
         
+        $filterOptions = $this->getFilterOptions();
+
         // Return view dengan data
-        return view('buku.index', compact(
-            'bukus',
-            'totalBuku',
-            'bukuTersedia',
-            'bukuHabis'
+        return view('buku.index', array_merge(
+            compact(
+                'bukus',
+                'totalBuku',
+                'bukuTersedia',
+                'bukuHabis'
+            ),
+            $filterOptions
         ));
     }
- 
+
     /**
      * Show the form for creating a new resource.
      */
+    public function search(Request $request)
+    {
+        $query = Buku::query();
+
+        if ($request->filled('keyword')) {
+            $keyword = $request->keyword;
+            $query->where(function ($query) use ($keyword) {
+                $query->where('judul', 'like', "%{$keyword}%")
+                    ->orWhere('pengarang', 'like', "%{$keyword}%")
+                    ->orWhere('penerbit', 'like', "%{$keyword}%");
+            });
+        }
+
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->kategori);
+        }
+
+        if ($request->filled('tahun')) {
+            $query->where('tahun_terbit', $request->tahun);
+        }
+
+        if ($request->filled('ketersediaan')) {
+            if ($request->ketersediaan === 'tersedia') {
+                $query->where('stok', '>', 0);
+            } elseif ($request->ketersediaan === 'habis') {
+                $query->where('stok', 0);
+            }
+        }
+
+        $bukus = $query->latest()->get();
+
+        $totalBuku = $bukus->count();
+        $bukuTersedia = $bukus->where('stok', '>', 0)->count();
+        $bukuHabis = $bukus->where('stok', 0)->count();
+
+        $filterOptions = $this->getFilterOptions();
+
+        return view('buku.index', array_merge(
+            compact('bukus', 'totalBuku', 'bukuTersedia', 'bukuHabis'),
+            $filterOptions
+        ))->with([
+            'kategori' => $request->kategori,
+            'keyword' => $request->keyword,
+            'tahun' => $request->tahun,
+            'ketersediaan' => $request->ketersediaan,
+        ]);
+    }
+
     public function create()
     {
         // Akan diimplementasi di pertemuan 12
@@ -95,12 +149,36 @@ class BukuController extends Controller
         $bukuTersedia = $bukus->where('stok', '>', 0)->count();
         $bukuHabis = $bukus->where('stok', 0)->count();
         
-        return view('buku.index', compact(
-            'bukus',
-            'totalBuku',
-            'bukuTersedia',
-            'bukuHabis',
-            'kategori'
+        return view('buku.index', array_merge(
+            compact(
+                'bukus',
+                'totalBuku',
+                'bukuTersedia',
+                'bukuHabis',
+                'kategori'
+            ),
+            $this->getFilterOptions()
         ));
+    }
+
+    private function getFilterOptions(): array
+    {
+        $kategoriList = Kategori::orderBy('nama_kategori')->pluck('nama_kategori')->toArray();
+
+        if (empty($kategoriList)) {
+            $kategoriList = Buku::select('kategori')
+                ->distinct()
+                ->orderBy('kategori')
+                ->pluck('kategori')
+                ->toArray();
+        }
+
+        $tahunList = Buku::select('tahun_terbit')
+            ->distinct()
+            ->orderByDesc('tahun_terbit')
+            ->pluck('tahun_terbit')
+            ->toArray();
+
+        return compact('kategoriList', 'tahunList');
     }
 }
