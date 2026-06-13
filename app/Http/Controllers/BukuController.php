@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Buku;
 use App\Models\Kategori;
+use App\Http\Requests\StoreBukuRequest;
+use App\Http\Requests\UpdateBukuRequest;
  
 class BukuController extends Controller
 {
@@ -86,18 +88,31 @@ class BukuController extends Controller
         ]);
     }
 
-    public function create()
-    {
-        // Akan diimplementasi di pertemuan 12
-        return view('buku.create');
-    }
+    // public function create()
+    // {
+    //     // Akan diimplementasi di pertemuan 12
+    //     return view('buku.create');
+    // }
  
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreBukuRequest $request)
     {
-        // Akan diimplementasi di pertemuan 12
+        try {
+        // Create buku baru dengan validated data
+        Buku::create($request->validated());
+        
+        // Redirect dengan success message
+        return redirect()->route('buku.index')
+                         ->with('success', 'Buku berhasil ditambahkan!');
+                         
+    } catch (\Exception $e) {
+        // Redirect dengan error message jika gagal
+        return redirect()->back()
+                         ->withInput()
+                         ->with('error', 'Gagal menambahkan buku: ' . $e->getMessage());
+    }
     }
  
     /**
@@ -117,7 +132,6 @@ class BukuController extends Controller
      */
     public function edit(string $id)
     {
-        // Akan diimplementasi di pertemuan 12
         $buku = Buku::findOrFail($id);
         return view('buku.edit', compact('buku'));
     }
@@ -125,9 +139,24 @@ class BukuController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateBukuRequest $request, string $id)
     {
-        // Akan diimplementasi di pertemuan 12
+        try {
+        $buku = Buku::findOrFail($id);
+        
+        // Update buku dengan validated data
+        $buku->update($request->validated());
+        
+        // Redirect dengan success message
+        return redirect()->route('buku.show', $buku->id)
+                         ->with('success', 'Buku berhasil diupdate!');
+                         
+    } catch (\Exception $e) {
+        // Redirect dengan error message jika gagal
+        return redirect()->back()
+                         ->withInput()
+                         ->with('error', 'Gagal mengupdate buku: ' . $e->getMessage());
+    }
     }
  
     /**
@@ -135,7 +164,22 @@ class BukuController extends Controller
      */
     public function destroy(string $id)
     {
-        // Akan diimplementasi di pertemuan 12
+        try {
+        $buku = Buku::findOrFail($id);
+        $judulBuku = $buku->judul;
+        
+        // Delete buku
+        $buku->delete();
+        
+        // Redirect dengan success message
+        return redirect()->route('buku.index')
+                         ->with('success', "Buku '{$judulBuku}' berhasil dihapus!");
+                         
+    } catch (\Exception $e) {
+        // Redirect dengan error message jika gagal
+        return redirect()->back()
+                         ->with('error', 'Gagal menghapus buku: ' . $e->getMessage());
+    }
     }
     
     /**
@@ -180,5 +224,10 @@ class BukuController extends Controller
             ->toArray();
 
         return compact('kategoriList', 'tahunList');
+    }
+
+    public function create()
+    {
+        return view('buku.create');
     }
 }

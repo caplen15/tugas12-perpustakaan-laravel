@@ -31,7 +31,7 @@ class Buku extends Model
         'stok' => 'integer',
     ];
 
-    public function getHargaFormattedAttribute(): string
+    public function getHargaFormatAttribute(): string
     {
         return 'Rp ' . number_format($this->harga, 0, ',', '.');
     }
