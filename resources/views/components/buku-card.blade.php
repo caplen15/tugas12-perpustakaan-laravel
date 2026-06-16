@@ -37,6 +37,9 @@
             </div>
 
             <div class="col-md-3 text-end">
+                <div class="mb-2 text-start">
+                    <input class="form-check-input buku-checkbox" type="checkbox" name="buku_ids[]" value="{{ $buku->id }}" id="buku_{{ $buku->id }}">
+                </div>
                 <h4 class="text-primary mb-2">
                     {{ $buku->harga_format }}
                 </h4>

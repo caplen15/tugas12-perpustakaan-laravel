@@ -1,9 +1,10 @@
 <?php
- 
+
 namespace App\Http\Requests;
- 
+
 use Illuminate\Foundation\Http\FormRequest;
- 
+use App\Rules\KodeBukuFormat;
+
 class StoreBukuRequest extends FormRequest
 {
     /**
@@ -13,7 +14,7 @@ class StoreBukuRequest extends FormRequest
     {
         return true;
     }
- 
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -21,21 +22,25 @@ class StoreBukuRequest extends FormRequest
      */
     public function rules(): array
     {
+        $bahasaRule = $this->input('kategori') === 'Programming'
+            ? 'required|in:Inggris'
+            : 'required|string|max:20';
+
         return [
-            'kode_buku' => 'required|string|max:20|unique:buku,kode_buku',
+            'kode_buku' => ['required', 'string', 'max:20', 'unique:buku,kode_buku', new KodeBukuFormat()],
             'judul' => 'required|string|max:200',
             'kategori' => 'required|in:Programming,Database,Web Design,Networking,Data Science',
             'pengarang' => 'required|string|max:100',
             'penerbit' => 'required|string|max:100',
-            'tahun_terbit' => 'required|integer|min:1900|max:' . date('Y'),
+            'tahun_terbit' => 'required|integer|digits:4|min:1900|max:' . date('Y'),
             'isbn' => 'nullable|string|max:20',
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
-            'bahasa' => 'required|string|max:20',
+            'bahasa' => $bahasaRule,
         ];
     }
- 
+
     /**
      * Get custom error messages.
      */
@@ -53,6 +58,7 @@ class StoreBukuRequest extends FormRequest
             'penerbit.required' => 'Nama penerbit wajib diisi.',
             'tahun_terbit.required' => 'Tahun terbit wajib diisi.',
             'tahun_terbit.integer' => 'Tahun terbit harus berupa angka.',
+            'tahun_terbit.digits' => 'Tahun terbit harus terdiri dari 4 digit.',
             'tahun_terbit.min' => 'Tahun terbit tidak valid.',
             'tahun_terbit.max' => 'Tahun terbit tidak boleh melebihi tahun sekarang.',
             'isbn.max' => 'ISBN maksimal 20 karakter.',
@@ -63,9 +69,11 @@ class StoreBukuRequest extends FormRequest
             'stok.integer' => 'Stok harus berupa angka bulat.',
             'stok.min' => 'Stok tidak boleh negatif.',
             'bahasa.required' => 'Bahasa wajib diisi.',
+            'bahasa.in' => 'Jika kategori Programming, bahasa harus "Inggris".',
+            'kode_buku.*' => 'Kode buku tidak valid. Gunakan format BK-XXX-000 (contoh: BK-PROG-001).',
         ];
     }
- 
+
     /**
      * Get custom attribute names.
      */

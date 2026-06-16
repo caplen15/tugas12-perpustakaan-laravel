@@ -4,12 +4,19 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>
-        <i class="bi bi-book"></i> Daftar Buku
-    </h1>
-    <a href="{{ route('buku.create') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Tambah Buku
-    </a>
+    <div>
+        <h1>
+            <i class="bi bi-book"></i> Daftar Buku
+        </h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('buku.export') }}" class="btn btn-success">
+            <i class="bi bi-download"></i> Export CSV
+        </a>
+        <a href="{{ route('buku.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Tambah Buku
+        </a>
+    </div>
 </div>
 
 {{-- Statistik Cards --}}
@@ -156,6 +163,19 @@
 </div>
 
 {{-- Tampilan Buku --}}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <input type="checkbox" id="select-all" class="form-check-input">
+        <label for="select-all" class="ms-2">Pilih Semua</label>
+    </div>
+
+    <div>
+        <button type="button" id="bulk-delete-btn" class="btn btn-danger">
+            <i class="bi bi-trash"></i> Hapus Terpilih
+        </button>
+    </div>
+</div>
+
 <div class="buku-container">
     @forelse ($bukus as $buku)
     <x-buku-card :buku="$buku" />
@@ -168,6 +188,10 @@
     </div>
     @endforelse
 </div>
+
+<form id="bulk-delete-form" action="{{ route('buku.bulk-delete') }}" method="POST" style="display:none;">
+    @csrf
+</form>
 
 {{-- Info Menampilkan Data --}}
 @if ($bukus->count() > 0)
@@ -204,6 +228,48 @@
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+</script>
+<script>
+    // Select all checkbox behavior
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'select-all') {
+            document.querySelectorAll('input[name="buku_ids[]"]').forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+        }
+    });
+
+    document.getElementById('bulk-delete-btn').addEventListener('click', function(e) {
+        const checked = Array.from(document.querySelectorAll('input[name="buku_ids[]"]:checked'));
+
+        if (checked.length === 0) {
+            Swal.fire({ icon: 'info', title: 'Tidak ada data', text: 'Pilih minimal satu buku.' });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Konfirmasi Hapus',
+            text: `Apakah Anda yakin ingin menghapus ${checked.length} buku terpilih?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        }).then(result => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('bulk-delete-form');
+                checked.forEach(cb => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'buku_ids[]';
+                    input.value = cb.value;
+                    form.appendChild(input);
+                });
                 form.submit();
             }
         });

@@ -1,9 +1,10 @@
 <?php
- 
+
 namespace App\Http\Requests;
- 
+
 use Illuminate\Foundation\Http\FormRequest;
- 
+use App\Rules\KodeBukuFormat;
+
 class UpdateBukuRequest extends FormRequest
 {
     /**
@@ -13,7 +14,7 @@ class UpdateBukuRequest extends FormRequest
     {
         return true;
     }
- 
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -23,22 +24,25 @@ class UpdateBukuRequest extends FormRequest
     {
         // Get buku ID from route parameter
         $bukuId = $this->route('buku');
-        
+        $bahasaRule = $this->input('kategori') === 'Programming'
+            ? 'required|in:Inggris'
+            : 'required|string|max:20';
+
         return [
-            'kode_buku' => 'required|string|max:20|unique:buku,kode_buku,' . $bukuId,
+            'kode_buku' => ['required', 'string', 'max:20', 'unique:buku,kode_buku,' . $bukuId, new KodeBukuFormat()],
             'judul' => 'required|string|max:200',
             'kategori' => 'required|in:Programming,Database,Web Design,Networking,Data Science',
             'pengarang' => 'required|string|max:100',
             'penerbit' => 'required|string|max:100',
-            'tahun_terbit' => 'required|integer|min:1900|max:' . date('Y'),
+            'tahun_terbit' => 'required|integer|digits:4|min:1900|max:' . date('Y'),
             'isbn' => 'nullable|string|max:20',
             'harga' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
-            'bahasa' => 'required|string|max:20',
+            'bahasa' => $bahasaRule,
         ];
     }
- 
+
     /**
      * Get custom error messages.
      */
@@ -47,11 +51,28 @@ class UpdateBukuRequest extends FormRequest
         return [
             'kode_buku.required' => 'Kode buku wajib diisi.',
             'kode_buku.unique' => 'Kode buku sudah digunakan.',
+            'kode_buku.max' => 'Kode buku maksimal 20 karakter.',
             'judul.required' => 'Judul buku wajib diisi.',
+            'judul.max' => 'Judul buku maksimal 200 karakter.',
             'kategori.required' => 'Kategori wajib dipilih.',
+            'kategori.in' => 'Kategori tidak valid.',
+            'pengarang.required' => 'Nama pengarang wajib diisi.',
+            'penerbit.required' => 'Nama penerbit wajib diisi.',
+            'tahun_terbit.required' => 'Tahun terbit wajib diisi.',
+            'tahun_terbit.integer' => 'Tahun terbit harus berupa angka.',
+            'tahun_terbit.digits' => 'Tahun terbit harus terdiri dari 4 digit.',
+            'tahun_terbit.min' => 'Tahun terbit tidak valid.',
+            'tahun_terbit.max' => 'Tahun terbit tidak boleh melebihi tahun sekarang.',
+            'isbn.max' => 'ISBN maksimal 20 karakter.',
             'harga.required' => 'Harga buku wajib diisi.',
             'harga.numeric' => 'Harga harus berupa angka.',
+            'harga.min' => 'Harga tidak boleh negatif.',
+            'stok.required' => 'Stok wajib diisi.',
             'stok.integer' => 'Stok harus berupa angka bulat.',
+            'stok.min' => 'Stok tidak boleh negatif.',
+            'bahasa.required' => 'Bahasa wajib diisi.',
+            'bahasa.in' => 'Jika kategori Programming, bahasa harus "Inggris".',
+            'kode_buku.*' => 'Kode buku tidak valid. Gunakan format BK-XXX-000 (contoh: BK-PROG-001).',
         ];
     }
 }

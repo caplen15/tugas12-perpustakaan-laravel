@@ -165,21 +165,85 @@ class BukuController extends Controller
     public function destroy(string $id)
     {
         try {
-        $buku = Buku::findOrFail($id);
-        $judulBuku = $buku->judul;
-        
-        // Delete buku
-        $buku->delete();
-        
-        // Redirect dengan success message
-        return redirect()->route('buku.index')
-                         ->with('success', "Buku '{$judulBuku}' berhasil dihapus!");
-                         
-    } catch (\Exception $e) {
-        // Redirect dengan error message jika gagal
-        return redirect()->back()
-                         ->with('error', 'Gagal menghapus buku: ' . $e->getMessage());
+            $buku = Buku::findOrFail($id);
+            $judulBuku = $buku->judul;
+
+            // Delete buku
+            $buku->delete();
+
+            // Redirect dengan success message
+            return redirect()->route('buku.index')
+                             ->with('success', "Buku '{$judulBuku}' berhasil dihapus!");
+        } catch (\Exception $e) {
+            // Redirect dengan error message jika gagal
+            return redirect()->back()
+                             ->with('error', 'Gagal menghapus buku: ' . $e->getMessage());
+        }
     }
+
+    /**
+     * Bulk delete selected buku.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->input('buku_ids', []);
+
+        if (empty($ids)) {
+            return redirect()->route('buku.index')
+                             ->with('error', 'Tidak ada buku yang dipilih.');
+        }
+
+        try {
+            $deleted = Buku::whereIn('id', $ids)->delete();
+
+            return redirect()->route('buku.index')
+                             ->with('success', $deleted . ' buku berhasil dihapus!');
+        } catch (\Exception $e) {
+            return redirect()->route('buku.index')
+                             ->with('error', 'Gagal menghapus buku: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export buku data to CSV.
+     */
+    public function export()
+    {
+        $bukus = Buku::all();
+        $filename = 'buku_' . date('Y-m-d_His') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($bukus) {
+            $file = fopen('php://output', 'w');
+
+            // Header CSV
+            fputcsv($file, [
+                'Kode Buku', 'Judul', 'Kategori', 'Pengarang',
+                'Penerbit', 'Tahun', 'ISBN', 'Harga', 'Stok'
+            ]);
+
+            // Data
+            foreach ($bukus as $buku) {
+                fputcsv($file, [
+                    $buku->kode_buku,
+                    $buku->judul,
+                    $buku->kategori,
+                    $buku->pengarang,
+                    $buku->penerbit,
+                    $buku->tahun_terbit,
+                    $buku->isbn,
+                    $buku->harga,
+                    $buku->stok,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
     
     /**
